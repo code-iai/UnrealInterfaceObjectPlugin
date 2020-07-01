@@ -4,7 +4,7 @@
 
 ## Features
 
-- A new Actor by the name of ObjectPosePublisher which publishes a PoseStamped message, under the given topic (default: "/unreal_interface/object_poses") for each Object with predefined Type (default: "RoboSherlock") and Key (default: "spawned"), onto the RosBridge.
+- A new Actor by the name of ObjectPosePublisher which publishes a PoseStamped message, under the given topic (default: "/unreal_interface/object_poses") for each Object with predefined Type (default: "UnrealInterface") and Key (default: "spawned"), onto the RosBridge.
 
 ## Installation
 

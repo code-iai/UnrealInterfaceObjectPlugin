@@ -26,7 +26,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	FString PublisherTopic = FString("/unreal_interface/object_poses");
 	UPROPERTY(EditAnywhere)
-	FString TypetoPublish = FString("RoboSherlock");
+	FString TypetoPublish = FString("UnrealInterface");
 	UPROPERTY(EditAnywhere)
 	FString KeyToPublish = FString("spawned");
 
