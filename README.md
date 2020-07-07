@@ -1,4 +1,4 @@
-# UROSSemLogInfoPlugin
+# UnrealInterfaceObjectPlugin
 
 **UE4 Version: 4.22.1** 
 
