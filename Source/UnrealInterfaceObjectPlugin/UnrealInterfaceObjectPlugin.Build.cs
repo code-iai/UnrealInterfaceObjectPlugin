@@ -26,10 +26,11 @@ public class UnrealInterfaceObjectPlugin : ModuleRules
 			new string[]
 			{
 				"Core",
-                "UROSBridge",
-                "Json",
-                "JsonUtilities",
-                "UTags"
+				"UROSBridge",
+				"Json",
+				"JsonUtilities",
+				"UTags",
+				"UConversions"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

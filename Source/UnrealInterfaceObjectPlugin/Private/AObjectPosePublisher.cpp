@@ -4,6 +4,7 @@
 #include "Engine/World.h"
 #include "UTags/Public/Tags.h"
 #include "Map.h"
+#include "Conversions.h"
 
 // Sets default values
 AObjectPosePublisher::AObjectPosePublisher()
@@ -76,7 +77,15 @@ void AObjectPosePublisher::PublishAllObjectsWithTag(UROSBridgeGameInstance* Inst
 			return;
 		}
 			
-		TSharedPtr<geometry_msgs::PoseStamped> PoseMsgPtr(new geometry_msgs::PoseStamped(std_msgs::Header(0, FROSTime::Now(), *uId), geometry_msgs::Pose(geometry_msgs::Point(KeyList[i]->GetActorLocation()), geometry_msgs::Quaternion(KeyList[i]->GetActorRotation().Quaternion()))));
+		TSharedPtr<geometry_msgs::PoseStamped> PoseMsgPtr(
+			new geometry_msgs::PoseStamped(
+				std_msgs::Header(0, FROSTime::Now(), *uId),
+				geometry_msgs::Pose(
+					geometry_msgs::Point(      FConversions::UToROS(KeyList[i]->GetActorLocation())  ),
+					geometry_msgs::Quaternion( FConversions::UToROS(KeyList[i]->GetActorRotation().Quaternion()) )
+				)
+			)
+		);
 		Handler->PublishMsg(Topic, PoseMsgPtr);
 	}
 }
