@@ -26,8 +26,7 @@ void AObjectPosePublisher::BeginPlay()
 
 	check(ActiveGameInstance->ROSHandler.IsValid());
 
-	// PoseStamped Publisher
-	Publisher = MakeShareable<FROSBridgePublisher>(new FROSBridgePublisher(PublisherTopic, TEXT("geometry_msgs/PoseStamped")));
+	Publisher = MakeShareable< FROSBridgePublisher>(new FROSBridgePublisher(PublisherTopic, TEXT("tf2_msgs/TFMessage")));
 	ActiveGameInstance->ROSHandler->AddPublisher(Publisher);
 	
 	ActiveGameInstance->ROSHandler->Process();
@@ -37,9 +36,6 @@ void AObjectPosePublisher::BeginPlay()
 void AObjectPosePublisher::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	//TSharedPtr<std_msgs::String> StringMsgPtr(new std_msgs::String(TEXT("TEST")));
-	TSharedPtr<geometry_msgs::PoseStamped> PoseMsgPtr(new geometry_msgs::PoseStamped(std_msgs::Header(12,FROSTime::Now(),TEXT("Test")), geometry_msgs::Pose(geometry_msgs::Point(1,1,1), geometry_msgs::Quaternion())));
 
 	// Current ROS Game instance.
 	UROSBridgeGameInstance* ActiveGameInstance = Cast<UROSBridgeGameInstance>(GetGameInstance());
@@ -65,6 +61,8 @@ void AObjectPosePublisher::PublishAllObjectsWithTag(UROSBridgeGameInstance* Inst
 
 	ActorMap.GetKeys(KeyList);
 
+	TArray<geometry_msgs::TransformStamped> OutputArray;
+
 	for (int i = 0; i < ActorMap.Num(); i++)
 	{
 		TagValues = FTags::GetKeyValuePairs(KeyList[i], FString("SemLog"));
@@ -76,16 +74,17 @@ void AObjectPosePublisher::PublishAllObjectsWithTag(UROSBridgeGameInstance* Inst
 
 			return;
 		}
-			
-		TSharedPtr<geometry_msgs::PoseStamped> PoseMsgPtr(
-			new geometry_msgs::PoseStamped(
-				std_msgs::Header(0, FROSTime::Now(), *uId),
-				geometry_msgs::Pose(
-					geometry_msgs::Point(      FConversions::UToROS(KeyList[i]->GetActorLocation())  ),
-					geometry_msgs::Quaternion( FConversions::UToROS(KeyList[i]->GetActorRotation().Quaternion()) )
-				)
-			)
-		);
-		Handler->PublishMsg(Topic, PoseMsgPtr);
+
+		std_msgs::Header Header = std_msgs::Header(i, FROSTime::Now(), *uId);
+		geometry_msgs::Transform Transform = geometry_msgs::Transform(KeyList[i]->GetActorLocation(), KeyList[i]->GetActorRotation().Quaternion());
+
+		OutputArray.Add(geometry_msgs::TransformStamped(Header, "Nothing", Transform));
 	}
+
+
+	TSharedPtr<tf2_msgs::TFMessage> TFMsgPtr(
+		new tf2_msgs::TFMessage(OutputArray)
+	);
+
+	Handler->PublishMsg(Topic, TFMsgPtr);
 }
