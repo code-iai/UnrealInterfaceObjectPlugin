@@ -8,9 +8,6 @@
 #include "ROSBridgeGameInstance.h"
 #include "tf2_msgs/TFMessage.h"
 #include "geometry_msgs/TransformStamped.h"
-#include "geometry_msgs/PoseStamped.h"
-#include "geometry_msgs/Quaternion.h"
-#include "geometry_msgs/Pose.h"
 #include "Array.h"
 #include "AObjectPosePublisher.generated.h"
 
