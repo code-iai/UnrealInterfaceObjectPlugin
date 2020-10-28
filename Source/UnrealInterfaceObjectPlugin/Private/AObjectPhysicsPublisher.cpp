@@ -1,6 +1,7 @@
 #include "AObjectPhysicsPublisher.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/PrimitiveComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/StaticMesh.h"
 #include "Map.h"
@@ -74,8 +75,10 @@ void AObjectPhysicsPublisher::PublishCollidingObject(UROSBridgeGameInstance* Ins
 			if (bDebug)
 				UE_LOG(LogTemp, Log, TEXT("Begin checking for spawn overlap collisions"));
 
+			TArray<geometry_msgs::TransformStamped> Checked = CheckSpawnCollision(Cast<UPrimitiveComponent>(ActorList[i]->GetRootComponent()));
+
 			TSharedPtr<tf2_msgs::TFMessage> TFMsgPtr(
-				new tf2_msgs::TFMessage(CheckSpawnCollision(ActorList[i]->GetRootComponent()))
+				new tf2_msgs::TFMessage(Checked)
 			);
 
 			Handler->PublishMsg(ProblemPublisherTopic, TFMsgPtr);
@@ -123,25 +126,23 @@ TArray<AActor*> AObjectPhysicsPublisher::GetTaggedActors(FString InputTypeTag)
 	return ActorList;
 }
 
-TArray<geometry_msgs::TransformStamped> AObjectPhysicsPublisher::CheckSpawnCollision(USceneComponent * InComponent)
+TArray<geometry_msgs::TransformStamped> AObjectPhysicsPublisher::CheckSpawnCollision(UPrimitiveComponent * Comp)
 {
-	TArray<UPrimitiveComponent*> OverlappingComponents;
 	TArray<geometry_msgs::TransformStamped> Output;
-	FString ActorName = InComponent->GetAttachmentRootActor()->GetName();
-	UStaticMeshComponent* Comp = Cast<UStaticMeshComponent>(InComponent);
-	bool prevOverlapBool = Comp->GetGenerateOverlapEvents();
+	FString ActorName = Comp->GetOwner()->GetName();
+	TArray<UPrimitiveComponent*> OverlappingComponents;
 
-	Comp->SetGenerateOverlapEvents(true);
 	Comp->GetOverlappingComponents(OverlappingComponents);
 	if (OverlappingComponents.Num() > 0)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Spawn Collision Problem detected for %s"), *ActorName);
 		for (UPrimitiveComponent* Comp : OverlappingComponents)
 		{
-			Output.Add(geometry_msgs::TransformStamped(std_msgs::Header(0, FROSTime::Now(), ActorName), Comp->GetAttachmentRootActor()->GetName(), geometry_msgs::Transform(Comp->GetComponentLocation(), Comp->GetComponentQuat())));
+			Output.Add(geometry_msgs::TransformStamped(std_msgs::Header(0, FROSTime::Now(), ActorName), 
+				Comp->GetAttachmentRootActor()->GetName(), 
+				geometry_msgs::Transform(Comp->GetComponentLocation(), Comp->GetComponentQuat())));
 		}
 	}
-	Comp->SetGenerateOverlapEvents(prevOverlapBool);
 	return Output;
 }
 

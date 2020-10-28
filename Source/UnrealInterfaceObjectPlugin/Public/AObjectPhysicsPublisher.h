@@ -75,7 +75,7 @@ private:
 		@param InComponent The Component for which to check its collision for.
 		@return An TransformStamped Array with every Object it currently collides with.
 	*/
-	TArray<geometry_msgs::TransformStamped> CheckSpawnCollision(USceneComponent * InComponent);
+	TArray<geometry_msgs::TransformStamped> CheckSpawnCollision(UPrimitiveComponent * InComponent);
 
 	/*
 		Function Creating invisible Collision Boxes around each and every Object bearing the Searched TrackTags
