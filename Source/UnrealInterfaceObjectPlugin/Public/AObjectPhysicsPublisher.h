@@ -9,6 +9,7 @@
 #include "FROSCallTouchingObjects.h"
 #include "tf2_msgs/TFMessage.h"
 #include "geometry_msgs/TransformStamped.h"
+#include "Components/BoxComponent.h"
 #include "AObjectPhysicsPublisher.generated.h"
 
 UCLASS()
@@ -75,7 +76,7 @@ private:
 		@param InComponent The Component for which to check its collision for.
 		@return An TransformStamped Array with every Object it currently collides with.
 	*/
-	TArray<geometry_msgs::TransformStamped> CheckSpawnCollision(UPrimitiveComponent * InComponent);
+	TArray<geometry_msgs::TransformStamped> CheckSpawnCollision(UBoxComponent * InComponent);
 
 	/*
 		Function Creating invisible Collision Boxes around each and every Object bearing the Searched TrackTags
@@ -83,6 +84,7 @@ private:
 
 		@param ActorArray Array of Actor given
 		@param TrackTag A Tag for which is searched and used to decide on which Object it'll put the box over.
+		@return Reference to the created Collision Box
 	*/
-	void CreateBoxChecker(AActor* ActorA);
+	UBoxComponent* CreateBoxChecker(AActor* ActorA);
 };

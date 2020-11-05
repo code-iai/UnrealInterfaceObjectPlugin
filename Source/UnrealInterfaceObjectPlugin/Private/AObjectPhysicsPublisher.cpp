@@ -1,5 +1,4 @@
 #include "AObjectPhysicsPublisher.h"
-#include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "DrawDebugHelpers.h"
@@ -70,12 +69,12 @@ void AObjectPhysicsPublisher::PublishCollidingObject(UROSBridgeGameInstance* Ins
 
 		if (ActorList[i]->GetComponentsByClass(UBoxComponent::StaticClass()).Num() == 0)
 		{
-			CreateBoxChecker(ActorList[i]);
+			UBoxComponent* compBox = CreateBoxChecker(ActorList[i]);
 
 			if (bDebug)
 				UE_LOG(LogTemp, Log, TEXT("Begin checking for spawn overlap collisions"));
 
-			TArray<geometry_msgs::TransformStamped> Checked = CheckSpawnCollision(Cast<UPrimitiveComponent>(ActorList[i]->GetRootComponent()));
+			TArray<geometry_msgs::TransformStamped> Checked = CheckSpawnCollision(compBox);
 
 			TSharedPtr<tf2_msgs::TFMessage> TFMsgPtr(
 				new tf2_msgs::TFMessage(Checked)
@@ -126,13 +125,16 @@ TArray<AActor*> AObjectPhysicsPublisher::GetTaggedActors(FString InputTypeTag)
 	return ActorList;
 }
 
-TArray<geometry_msgs::TransformStamped> AObjectPhysicsPublisher::CheckSpawnCollision(UPrimitiveComponent * Comp)
+TArray<geometry_msgs::TransformStamped> AObjectPhysicsPublisher::CheckSpawnCollision(UBoxComponent * Comp)
 {
 	TArray<geometry_msgs::TransformStamped> Output;
 	FString ActorName = Comp->GetOwner()->GetName();
 	TArray<UPrimitiveComponent*> OverlappingComponents;
 
+	// Update Overlap Information before the next call.
+	Comp->UpdateOverlaps();
 	Comp->GetOverlappingComponents(OverlappingComponents);
+
 	if (OverlappingComponents.Num() > 0)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Spawn Collision Problem detected for %s"), *ActorName);
@@ -146,7 +148,7 @@ TArray<geometry_msgs::TransformStamped> AObjectPhysicsPublisher::CheckSpawnColli
 	return Output;
 }
 
-void AObjectPhysicsPublisher::CreateBoxChecker(AActor* Actor)
+UBoxComponent* AObjectPhysicsPublisher::CreateBoxChecker(AActor* Actor)
 {
 	FVector Extent = Cast<UStaticMeshComponent>(Actor->GetRootComponent())->GetStaticMesh()->GetBoundingBox().GetExtent() + FVector(1, 1, 1);
 
@@ -160,4 +162,6 @@ void AObjectPhysicsPublisher::CreateBoxChecker(AActor* Actor)
 
 	if (bDebug)
 		UE_LOG(LogTemp, Warning, TEXT("DEBUG: OverlapBox Created over %s"), *Box->GetAttachmentRootActor()->GetName());
+	
+	return Box;
 }
