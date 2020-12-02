@@ -10,6 +10,7 @@
 #include "tf2_msgs/TFMessage.h"
 #include "geometry_msgs/TransformStamped.h"
 #include "Components/BoxComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "AObjectPhysicsPublisher.generated.h"
 
 UCLASS()
@@ -21,7 +22,11 @@ public:
 	AObjectPhysicsPublisher();
 	TSharedPtr<FROSBridgePublisher> Publisher;
 	TSharedPtr<FROSBridgePublisher> ProblemPublisher;
+	TSharedPtr<FROSBridgePublisher> StatePublisher;
 	TSharedPtr<FROSCallTouchingObjects> Service;
+
+	UPROPERTY(EditAnywhere)
+	AActor* FocusObject;
 
 	UPROPERTY(EditAnywhere)
 	FString ProblemPublisherTopic = FString("/unreal_interface/physics_spawn_problem");
@@ -39,6 +44,9 @@ public:
 	// Upon being toggled, will result in the collision check event checks.
 	UPROPERTY(EditAnywhere)
 	bool bGiveAllTrackedTouches;
+	// Toggleable additional checks to determine if an object is within, under or up from the object.
+	UPROPERTY(EditAnywhere)
+	bool bDetermineDirection = false;
 	UPROPERTY(EditAnywhere)
 	bool bDebug = false;
 
@@ -87,4 +95,22 @@ private:
 		@return Reference to the created Collision Box
 	*/
 	UBoxComponent* CreateBoxChecker(AActor* ActorA);
+
+	/*
+		Function to determine whether the given object fall under the Category of Up, 
+		Down or Inside the object with the help of vectors.
+		@param OriginObject Input with the Object which should be the reference for the determination.
+		@param ObjectToCheckFor Input is the Actor which touches the object for which to check it for.
+		@return A Fstring, for now, which simply states back whether the given Object is inside, ontop or under.
+	*/
+	FString DetermineState(AActor* OriginObject, AActor* ObjectToCheckFor);
+
+	/*
+		Auxiliary Function to help determine the state of another Object B relative to Object A.
+
+		@param A FromActor from where the Vecotr should begin with.
+		@param B ToActor where the Vector should go to.
+		@return FVector with the Vector going from A to B.
+	*/
+	FVector GetVectorFromAToB(AActor* A, AActor* B);
 };

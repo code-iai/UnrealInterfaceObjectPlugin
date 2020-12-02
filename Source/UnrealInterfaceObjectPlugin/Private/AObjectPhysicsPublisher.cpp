@@ -59,6 +59,10 @@ void AObjectPhysicsPublisher::PublishCollidingObject(UROSBridgeGameInstance* Ins
 	
 	for (int i = 0; i < ActorList.Num(); i++)
 	{
+		// Check State To Focus Object
+		if (bDetermineDirection && FocusObject)
+			DetermineState(FocusObject, ActorList[i]);
+		
 		FJsonSerializableKeyValueMap Tags = FTags::GetKeyValuePairs(ActorList[i], FString("SemLog"));
 		FString* uId = Tags.Find("Id");
 		if (!uId)
@@ -75,6 +79,9 @@ void AObjectPhysicsPublisher::PublishCollidingObject(UROSBridgeGameInstance* Ins
 				UE_LOG(LogTemp, Log, TEXT("Begin checking for spawn overlap collisions"));
 
 			TArray<geometry_msgs::TransformStamped> Checked = CheckSpawnCollision(compBox);
+
+			if (Checked.Num() != 0)
+				ActorList[i]->Destroy();
 
 			TSharedPtr<tf2_msgs::TFMessage> TFMsgPtr(
 				new tf2_msgs::TFMessage(Checked)
@@ -164,4 +171,59 @@ UBoxComponent* AObjectPhysicsPublisher::CreateBoxChecker(AActor* Actor)
 		UE_LOG(LogTemp, Warning, TEXT("DEBUG: OverlapBox Created over %s"), *Box->GetAttachmentRootActor()->GetName());
 	
 	return Box;
+}
+
+FString AObjectPhysicsPublisher::DetermineState(AActor * OriginObject, AActor * ObjectToCheckFor)
+{
+	if (OriginObject == ObjectToCheckFor)
+		return FString("SELF");
+
+	FString Output = FString();
+	// FVector VectorToObject = GetVectorFromAToB(OriginObject, ObjectToCheckFor); // Doesn't work
+	FVector VectorToObject = OriginObject->GetActorLocation() - ObjectToCheckFor->GetActorLocation();
+	float ActorBoxSizeHeightZ = OriginObject->GetComponentsBoundingBox().GetExtent().Z;
+	float ActorBoxSizeHeightY = OriginObject->GetComponentsBoundingBox().GetExtent().Y;
+	float ActorBoxSizeHeightX = OriginObject->GetComponentsBoundingBox().GetExtent().X;
+
+	if (bDebug)
+	{
+		DrawDebugDirectionalArrow(GetWorld(), OriginObject->GetActorLocation(), VectorToObject, 2.0f, FColor::Blue,
+			false, 1.0f);
+		//UE_LOG(LogTemp, Error, TEXT("%f , %f , %f"), VectorToObject.X, VectorToObject.Y, VectorToObject.Z)
+	}
+
+	// Many cases are possible at once, but priotiy is from weakest to strongest
+	// Inside, On = Under, Above = Below
+	// WIP: Alternative Solution for IN
+	bool bInside = VectorToObject.Z <= ActorBoxSizeHeightZ && VectorToObject.Z >= -ActorBoxSizeHeightZ
+		&& VectorToObject.Y <= ActorBoxSizeHeightY && VectorToObject.Y >= -ActorBoxSizeHeightY
+		&& VectorToObject.X <= ActorBoxSizeHeightX && VectorToObject.X >= -ActorBoxSizeHeightX;
+	bool bOn = false; // WIP: TODO Later
+	bool bUnder = false; // WIP: TODO Later
+	bool bAbove = VectorToObject.Z >= 0;
+	bool bBelow = VectorToObject.Z < 0;
+
+	// Start Building Output
+	if (bInside && Output.IsEmpty())
+		Output = FString("INSIDE");
+	if (bOn && Output.IsEmpty())
+		Output = FString("ON");
+	if (bUnder && Output.IsEmpty())
+		Output = FString("UNDER");
+	if (bAbove && Output.IsEmpty())
+		Output = FString("ABOVE");
+	if (bBelow && Output.IsEmpty())
+		Output = FString("BELOW");
+
+	if (bDebug && (Output != FString("SELF")))
+		UE_LOG(LogTemp, Warning, TEXT("%s is %s of %s"), *ObjectToCheckFor->GetName(), *Output, *OriginObject->GetName());
+
+	return Output;
+}
+
+FVector AObjectPhysicsPublisher::GetVectorFromAToB(AActor * A, AActor * B)
+{
+	FVector Output = UKismetMathLibrary::GetDirectionUnitVector(A->GetActorLocation(), B->GetActorLocation());
+
+	return Output;
 }
