@@ -76,7 +76,7 @@ void AObjectPosePublisher::PublishAllObjectsWithTag(UROSBridgeGameInstance* Inst
 		}
 
 		std_msgs::Header Header = std_msgs::Header(i, FROSTime::Now(), *uId);
-		geometry_msgs::Transform Transform = geometry_msgs::Transform(KeyList[i]->GetActorLocation(), KeyList[i]->GetActorRotation().Quaternion());
+		geometry_msgs::Transform Transform = geometry_msgs::Transform(FConversions::UToROS(KeyList[i]->GetActorLocation()), FConversions::UToROS(KeyList[i]->GetActorRotation().Quaternion()));
 
 		OutputArray.Add(geometry_msgs::TransformStamped(Header, "Nothing", Transform));
 	}
