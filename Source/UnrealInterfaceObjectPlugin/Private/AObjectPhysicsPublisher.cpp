@@ -24,8 +24,10 @@ void AObjectPhysicsPublisher::BeginPlay()
 	Service = MakeShareable<FROSCallTouchingObjects>(new FROSCallTouchingObjects(ServiceTopic, TEXT("std_srvs/SetBool")));
 	Publisher = MakeShareable<FROSBridgePublisher>(new FROSBridgePublisher(PublisherTopic, TEXT("tf2_msgs/TFMessage")));
 	ProblemPublisher = MakeShareable<FROSBridgePublisher>(new FROSBridgePublisher(ProblemPublisherTopic, TEXT("tf2_msgs/TFMessage")));
+	StatePublisher = MakeShareable<FROSBridgePublisher>(new FROSBridgePublisher(StateTopic, TEXT("std_msgs/String")));
 	ActiveGameInstance->ROSHandler->AddPublisher(Publisher);
 	ActiveGameInstance->ROSHandler->AddPublisher(ProblemPublisher);
+	ActiveGameInstance->ROSHandler->AddPublisher(StatePublisher);
 	ActiveGameInstance->ROSHandler->AddServiceServer(Service);
 	ActiveGameInstance->ROSHandler->Process();
 }
@@ -59,9 +61,14 @@ void AObjectPhysicsPublisher::PublishCollidingObject(UROSBridgeGameInstance* Ins
 	
 	for (int i = 0; i < ActorList.Num(); i++)
 	{
-		// Check State To Focus Object
+		// Check State To Focus Object and publish it.
 		if (bDetermineDirection && FocusObject)
-			DetermineState(FocusObject, ActorList[i]);
+		{
+			FString StateOutput = FString("{ name:" + ActorList[i]->GetName() + ", state:" + DetermineState(FocusObject, ActorList[i]) + " }");
+			TSharedPtr<std_msgs::String> StateStringPtr(new std_msgs::String(StateOutput));
+			
+			Handler->PublishMsg(StateTopic, StateStringPtr);
+		}
 		
 		FJsonSerializableKeyValueMap Tags = FTags::GetKeyValuePairs(ActorList[i], FString("SemLog"));
 		FString* uId = Tags.Find("Id");
@@ -74,20 +81,6 @@ void AObjectPhysicsPublisher::PublishCollidingObject(UROSBridgeGameInstance* Ins
 		if (ActorList[i]->GetComponentsByClass(UBoxComponent::StaticClass()).Num() == 0)
 		{
 			UBoxComponent* compBox = CreateBoxChecker(ActorList[i]);
-
-			if (bDebug)
-				UE_LOG(LogTemp, Log, TEXT("Begin checking for spawn overlap collisions"));
-
-			TArray<geometry_msgs::TransformStamped> Checked = CheckSpawnCollision(compBox);
-
-			if (Checked.Num() != 0)
-				ActorList[i]->Destroy();
-
-			TSharedPtr<tf2_msgs::TFMessage> TFMsgPtr(
-				new tf2_msgs::TFMessage(Checked)
-			);
-
-			Handler->PublishMsg(ProblemPublisherTopic, TFMsgPtr);
 		}
 		else if (bGiveAllTrackedTouches)
 		{
@@ -130,29 +123,6 @@ TArray<AActor*> AObjectPhysicsPublisher::GetTaggedActors(FString InputTypeTag)
 	ActorMap.GetKeys(ActorList);
 
 	return ActorList;
-}
-
-TArray<geometry_msgs::TransformStamped> AObjectPhysicsPublisher::CheckSpawnCollision(UBoxComponent * Comp)
-{
-	TArray<geometry_msgs::TransformStamped> Output;
-	FString ActorName = Comp->GetOwner()->GetName();
-	TArray<UPrimitiveComponent*> OverlappingComponents;
-
-	// Update Overlap Information before the next call.
-	Comp->UpdateOverlaps();
-	Comp->GetOverlappingComponents(OverlappingComponents);
-
-	if (OverlappingComponents.Num() > 0)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Spawn Collision Problem detected for %s"), *ActorName);
-		for (UPrimitiveComponent* Comp : OverlappingComponents)
-		{
-			Output.Add(geometry_msgs::TransformStamped(std_msgs::Header(0, FROSTime::Now(), ActorName), 
-				Comp->GetAttachmentRootActor()->GetName(), 
-				geometry_msgs::Transform(Comp->GetComponentLocation(), Comp->GetComponentQuat())));
-		}
-	}
-	return Output;
 }
 
 UBoxComponent* AObjectPhysicsPublisher::CreateBoxChecker(AActor* Actor)
@@ -216,7 +186,7 @@ FString AObjectPhysicsPublisher::DetermineState(AActor * OriginObject, AActor * 
 		Output = FString("BELOW");
 
 	if (bDebug && (Output != FString("SELF")))
-		UE_LOG(LogTemp, Warning, TEXT("%s is %s of %s"), *ObjectToCheckFor->GetName(), *Output, *OriginObject->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s is %s of %s"), *OriginObject->GetName(), *Output, *ObjectToCheckFor->GetName());
 
 	return Output;
 }

@@ -9,6 +9,7 @@
 #include "FROSCallTouchingObjects.h"
 #include "tf2_msgs/TFMessage.h"
 #include "geometry_msgs/TransformStamped.h"
+#include "std_msgs/String.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "AObjectPhysicsPublisher.generated.h"
@@ -32,6 +33,8 @@ public:
 	FString ProblemPublisherTopic = FString("/unreal_interface/physics_spawn_problem");
 	UPROPERTY(EditAnywhere)
 	FString PublisherTopic = FString("/unreal_interface/physics_contact");
+	UPROPERTY(EditAnywhere)
+	FString StateTopic = FString("/unreal_interface/state_publisher");
 	UPROPERTY(EditAnywhere)
 	FString TypeToTrack = FString("UnrealInterface");
 	UPROPERTY(EditAnywhere)
@@ -77,14 +80,6 @@ private:
 		@return An Array of Actors which have the InputTypeTag
 	*/
 	TArray<AActor*> GetTaggedActors(FString InputTypeTag);
-
-	/*
-		Auxialiary Function used to check and send out a message for any kind of Spawn Collisions using Overlap Events.
-
-		@param InComponent The Component for which to check its collision for.
-		@return An TransformStamped Array with every Object it currently collides with.
-	*/
-	TArray<geometry_msgs::TransformStamped> CheckSpawnCollision(UBoxComponent * InComponent);
 
 	/*
 		Function Creating invisible Collision Boxes around each and every Object bearing the Searched TrackTags
