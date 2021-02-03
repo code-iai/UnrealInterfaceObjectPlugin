@@ -46,7 +46,8 @@ void AObjectPhysicsPublisher::Tick(float DeltaTime)
 	{
 		ROSCallIntervall -= 0.50;
 
-		bGiveAllTrackedTouches = Service->bSetBoolean;
+		if (Service->bSetBoolean)
+			bGiveAllTrackedTouches = Service->bSetBoolean;
 		PublishCollidingObject(ActiveGameInstace);
 	}
 
@@ -61,7 +62,7 @@ void AObjectPhysicsPublisher::PublishCollidingObject(UROSBridgeGameInstance* Ins
 	
 	for (int i = 0; i < ActorList.Num(); i++)
 	{
-		// Check State To Focus Object and publish it.
+		// Check State To Focus Object and publish it. WIP
 		if (bDetermineDirection && FocusObject)
 		{
 			FString StateOutput = FString("{ name:" + ActorList[i]->GetName() + ", state:" + DetermineState(FocusObject, ActorList[i]) + " }");
@@ -77,25 +78,38 @@ void AObjectPhysicsPublisher::PublishCollidingObject(UROSBridgeGameInstance* Ins
 			UE_LOG(LogTemp, Error, TEXT("ERROR: ID not found in SemLog"));
 			return;
 		}
-
+		/*
 		if (ActorList[i]->GetComponentsByClass(UBoxComponent::StaticClass()).Num() == 0)
 		{
 			UBoxComponent* compBox = CreateBoxChecker(ActorList[i]);
 		}
-		else if (bGiveAllTrackedTouches)
+		*/
+		if (bGiveAllTrackedTouches)
 		{
+			/*
 			TArray<UPrimitiveComponent*> OutArrayComponents;
 			Cast<UBoxComponent>(ActorList[i]->GetComponentsByClass(UBoxComponent::StaticClass())[0])->GetOverlappingComponents(OutArrayComponents);
+			*/
 
-			for (UPrimitiveComponent * Comp : OutArrayComponents)
+			TArray<FOverlapResult> Results;
+			GetWorld()->OverlapMultiByChannel(Results, ActorList[i]->GetActorLocation(), ActorList[i]->GetActorRotation().Quaternion(), 
+				ECollisionChannel::ECC_WorldDynamic, FCollisionShape::MakeBox(Cast<UStaticMeshComponent>(ActorList[i]->
+				GetComponentByClass(UStaticMeshComponent::StaticClass()))->GetStaticMesh()->GetBoundingBox().GetExtent() + FVector(1, 1, 1)));
+
+			for (FOverlapResult res : Results)
 			{
-				OutputArray.Add(geometry_msgs::TransformStamped(std_msgs::Header(i, FROSTime::Now(), *uId), 
-					Comp->GetAttachmentRootActor()->GetName(), 
-					geometry_msgs::Transform(Comp->GetComponentLocation(), 
-					Comp->GetComponentQuat())));
+				UPrimitiveComponent* Comp = res.Component.Get();
 
-				if (bDebug)
-					UE_LOG(LogTemp, Warning, TEXT("%s touches %s"), *ActorList[i]->GetName(), *Comp->GetAttachmentRootActor()->GetName());
+				if (res.Actor.Get() != ActorList[i])
+				{
+					OutputArray.Add(geometry_msgs::TransformStamped(std_msgs::Header(i, FROSTime::Now(), *uId), 
+						Comp->GetAttachmentRootActor()->GetName(), 
+						geometry_msgs::Transform(Comp->GetComponentLocation(), 
+						Comp->GetComponentQuat())));
+
+					if (bDebug)
+						UE_LOG(LogTemp, Warning, TEXT("%s touches %s"), *ActorList[i]->GetName(), *Comp->GetAttachmentRootActor()->GetName());
+				}
 			}
 
 			if (bDebug)
@@ -109,11 +123,11 @@ void AObjectPhysicsPublisher::PublishCollidingObject(UROSBridgeGameInstance* Ins
 			);
 
 			Handler->PublishMsg(PublisherTopic, TFMsgPtr);
+
+			Service->bSetBoolean = false;
+			bGiveAllTrackedTouches = false;
 		}
 	}
-
-	Service->bSetBoolean = false;
-	bGiveAllTrackedTouches = false;
 }
 
 TArray<AActor*> AObjectPhysicsPublisher::GetTaggedActors(FString InputTypeTag)
@@ -125,6 +139,7 @@ TArray<AActor*> AObjectPhysicsPublisher::GetTaggedActors(FString InputTypeTag)
 	return ActorList;
 }
 
+// Deprecated
 UBoxComponent* AObjectPhysicsPublisher::CreateBoxChecker(AActor* Actor)
 {
 	FVector Extent = Cast<UStaticMeshComponent>(Actor->GetRootComponent())->GetStaticMesh()->GetBoundingBox().GetExtent() + FVector(1, 1, 1);
