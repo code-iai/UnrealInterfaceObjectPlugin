@@ -73,24 +73,15 @@ void AObjectPhysicsPublisher::PublishCollidingObject(UROSBridgeGameInstance* Ins
 		
 		FJsonSerializableKeyValueMap Tags = FTags::GetKeyValuePairs(ActorList[i], FString("SemLog"));
 		FString* uId = Tags.Find("Id");
+
 		if (!uId)
 		{
 			UE_LOG(LogTemp, Error, TEXT("ERROR: ID not found in SemLog"));
 			return;
 		}
-		/*
-		if (ActorList[i]->GetComponentsByClass(UBoxComponent::StaticClass()).Num() == 0)
-		{
-			UBoxComponent* compBox = CreateBoxChecker(ActorList[i]);
-		}
-		*/
+
 		if (bGiveAllTrackedTouches)
 		{
-			/*
-			TArray<UPrimitiveComponent*> OutArrayComponents;
-			Cast<UBoxComponent>(ActorList[i]->GetComponentsByClass(UBoxComponent::StaticClass())[0])->GetOverlappingComponents(OutArrayComponents);
-			*/
-
 			TArray<FOverlapResult> Results;
 			GetWorld()->OverlapMultiByChannel(Results, ActorList[i]->GetActorLocation(), ActorList[i]->GetActorRotation().Quaternion(), 
 				ECollisionChannel::ECC_WorldDynamic, FCollisionShape::MakeBox(Cast<UStaticMeshComponent>(ActorList[i]->
