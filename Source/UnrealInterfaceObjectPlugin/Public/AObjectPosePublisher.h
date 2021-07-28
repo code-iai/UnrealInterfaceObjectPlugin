@@ -8,15 +8,17 @@
 #include "ROSBridgeGameInstance.h"
 #include "tf2_msgs/TFMessage.h"
 #include "geometry_msgs/TransformStamped.h"
+#if ENGINE_MINOR_VERSION < 25 || ENGINE_MAJOR_VERSION >4
 #include "Array.h"
+#endif
 #include "AObjectPosePublisher.generated.h"
 
 UCLASS()
 class UNREALINTERFACEOBJECTPLUGIN_API AObjectPosePublisher : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	AObjectPosePublisher();
 	TSharedPtr<FROSBridgePublisher> Publisher;
@@ -40,7 +42,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

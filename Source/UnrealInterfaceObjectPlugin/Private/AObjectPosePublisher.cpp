@@ -3,7 +3,9 @@
 #include "AObjectPosePublisher.h"
 #include "Engine/World.h"
 #include "UTags/Public/Tags.h"
+#if ENGINE_MINOR_VERSION < 25 || ENGINE_MAJOR_VERSION >4
 #include "Map.h"
+#endif
 #include "Conversions.h"
 
 // Sets default values
@@ -28,7 +30,7 @@ void AObjectPosePublisher::BeginPlay()
 
 	Publisher = MakeShareable< FROSBridgePublisher>(new FROSBridgePublisher(PublisherTopic, TEXT("tf2_msgs/TFMessage")));
 	ActiveGameInstance->ROSHandler->AddPublisher(Publisher);
-	
+
 	ActiveGameInstance->ROSHandler->Process();
 }
 
