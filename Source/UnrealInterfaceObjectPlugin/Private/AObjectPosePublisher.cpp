@@ -3,8 +3,10 @@
 #include "AObjectPosePublisher.h"
 #include "Engine/World.h"
 #include "UTags/Public/Tags.h"
-#if ENGINE_MINOR_VERSION < 25 || ENGINE_MAJOR_VERSION >4
+#if ENGINE_MINOR_VERSION < 25 && ENGINE_MAJOR_VERSION == 4
 #include "Map.h"
+#elif ENGINE_MAJOR_VERSION >= 5
+#include "Containers/Map.h"
 #endif
 #include "Conversions.h"
 
@@ -42,7 +44,7 @@ void AObjectPosePublisher::Tick(float DeltaTime)
 	// Current ROS Game instance.
 	UROSBridgeGameInstance* ActiveGameInstance = Cast<UROSBridgeGameInstance>(GetGameInstance());
 	check(ActiveGameInstance);
-	// 1 Sekunde belassen fürs erst.
+	// 1 Sekunde belassen fï¿½rs erst.
 	TimeCounterRosCall += DeltaTime;
 	if (TimeCounterRosCall >= 1.00)
 	{

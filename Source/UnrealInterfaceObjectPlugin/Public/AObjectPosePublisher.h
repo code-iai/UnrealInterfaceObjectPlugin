@@ -8,8 +8,10 @@
 #include "ROSBridgeGameInstance.h"
 #include "tf2_msgs/TFMessage.h"
 #include "geometry_msgs/TransformStamped.h"
-#if ENGINE_MINOR_VERSION < 25 || ENGINE_MAJOR_VERSION >4
+#if ENGINE_MINOR_VERSION < 25 && ENGINE_MAJOR_VERSION == 4
 #include "Array.h"
+#elif ENGINE_MAJOR_VERSION >= 5 
+#include "Containers/Array.h"
 #endif
 #include "AObjectPosePublisher.generated.h"
 
